@@ -73,11 +73,14 @@ def init_population(pop_size, n_hidden, n_input, n_output):
 def tournament_selection(pop, fitnesses, k=3):
     # first random selection
     selection_ix = np.random.randint(len(pop))
-    for ix in np.random.randint(0, len(pop), k-1):
+    k_individuals = np.random.randint(0, len(pop), k-1)
+    for ix in k_individuals:
         # check if better (e.g. perform a tournament)
-        if fitnesses[ix] < fitnesses[selection_ix]:
+        if fitnesses[ix] > fitnesses[selection_ix]:
             selection_ix = ix
+            
     return pop[selection_ix]
+
 
 # crossover two parents to create two children
 def crossover(p1, p2, crossover_rate):
@@ -138,7 +141,7 @@ def genetic_algorithm(n_iter, n_pop, cross_rate, mutation_rate):
             # crossover and mutation
             for c in crossover(p1, p2, cross_rate):
                 # mutation
-                mutation(c, mutation_rate)
+                c = mutation(c, mutation_rate)
                 # store for next generation
                 children.append(c)		
         # replace population
@@ -151,13 +154,13 @@ def genetic_algorithm(n_iter, n_pop, cross_rate, mutation_rate):
 
 
 # define the total iterations
-n_generations = 2
+n_generations = 100
 # define the population size
-n_pop = 4
+n_pop = 100
 # crossover rate
-crossover_r = 0.9
-# mutation rate
-mutation_r = 0.9  
+crossover_r = 0.8
+# mutation rate(Typically between 1/pop_size and 1/ chromosome_length)
+mutation_r = 1/n_pop 
 # lower and upper bound on initialization
 lower_bound = -1
 upper_bound = 1
