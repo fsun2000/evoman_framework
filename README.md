@@ -1,3 +1,4 @@
-Evoman is a video game playing framework inspired on Megaman.
+Evolutionary Computing, Task 1: specialist agent
+Group 111 
 
-A demo can be found here:  https://www.youtube.com/watch?v=ZqaMjd1E4ZI
+The results for the final CNA and NEAT can be reproduced by running CNA_uniform_crossover.py and neat_experiment.py.
