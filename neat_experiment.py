@@ -65,7 +65,7 @@ def parse_args(args):
     parser.add_argument('--config', type=Path, help='Path to config file', default=Path('config_neat'))
     parser.add_argument('--checkpoint', type=Path, help='Path to checkpoint to load')
     parser.add_argument('--ch-interval', type=int, help='Checkpoint interval per generation', default=1)
-    parser.add_argument('--max-gen', type=int, help='Maximum number of generations', default=30)
+    parser.add_argument('--max-gen', type=int, help='Maximum number of generations', default=100)
     parser.add_argument('--enemies', type=int, nargs='+', help='Enemies to use', default=[2, 6, 8])
     return parser.parse_args(args)
 
