@@ -5,8 +5,7 @@ Change selecting best solution by gain. instead of fitness
 Feng: statistical tests boxplots
 Write report
 
-# Uses onepoint crossover function and change the save path of the results
-# Run 3 experiments for enemy 6 for 100 generations
+# For final scores: use npop=100 and gens=100
 """
 
 # imports framework
@@ -14,7 +13,6 @@ import sys
 import os
 import time
 import csv
-import argparse
 
 sys.path.insert(0, 'evoman')
 os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -110,17 +108,6 @@ def round_robin_selection(parents, children, p_scores, c_scores, q=5):
     top_q_ind = np.argpartition(wins, -n_pop)[-n_pop:]
     return total_pop[top_q_ind], scores[top_q_ind]
 
-# crossover two parents to create two children
-def one_point_crossover(parent_1, parent_2, crossover_rate):
-    # randomly select whether to perform crossover
-    if np.random.rand() < crossover_rate:
-        crossover_point = np.random.randint(1, len(parent_1))
-        child = np.append(parent_1[crossover_point:], parent_2[:crossover_point])  
-    else:
-        child = parent_1 if np.random.random() < 0.5 else parent_2
-    
-    return child
-
 
 def uniform_crossover(parent_1, parent_2, cross_rate):
     if np.random.random() < cross_rate:
@@ -131,7 +118,7 @@ def uniform_crossover(parent_1, parent_2, cross_rate):
         return parent_1 if np.random.random() < 0.5 else parent_2
 
 
-def genetic_algorithm(params, n_generations, n_pop, cross_rate, mutation_rate, results_path, k):
+def genetic_algorithm(n_generations, n_pop, cross_rate, mutation_rate, results_path, k):
     # Initialize population
     pop = init_population(n_pop, n_hidden=N_HIDDEN_NEURONS, n_input=20, n_output=5)
 
@@ -164,10 +151,7 @@ def genetic_algorithm(params, n_generations, n_pop, cross_rate, mutation_rate, r
                 # Crossover and mutation (tournament, uniform alpha, gaussian noise)
                 parent_1 = tournament_selection(pop, fitnesses, k)
                 parent_2 = tournament_selection(pop, fitnesses, k)
-                if params.crossover == 'one_point_crossover':
-                    child = one_point_crossover(parent_1, parent_2, cross_rate)
-                else:
-                    child = uniform_crossover(parent_1, parent_2, cross_rate)
+                child = uniform_crossover(parent_1, parent_2, cross_rate)
                 child = mutation(child, mutation_rate)
                 children.append(child)
             children = np.array(children)
@@ -207,33 +191,27 @@ lower_bound = -1
 k = 2
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--crossover', type=str, help='crossover type', default='one_point_crossover')
-    # parser.add_argument('--save_file', type=str, help='file name for saving the results', default='one_point_crossover_')
-    args = parser.parse_args()
-
-
     all_gains = {}
 
     # For each enemy
-    enemies = [6]  # We do enemies 2,6,8
+    enemies = [2]  # We do enemies 2,6,8
     # n_experiments = 10
     for enemy in enemies:
 
         # Run N independent experiments
-        for i in [0, 1, 2]:
+        for i in [0, 1, 2, 3, 4]:
 
             log_path = Path('EA2', 'enemy-{}'.format(enemy), 'run-{}'.format(i))
             log_path.mkdir(parents=True, exist_ok=True)
             Experiment.initialize(str(log_path), enemy)
-            results_path = os.path.join(log_path, args.crossover+ str(n_generations) + '.csv')
+            results_path = os.path.join(log_path, 'improved-results-' + str(n_generations) + '.csv')
 
             # Remove previous experiment results
             if os.path.exists(results_path):
                 os.remove(results_path)
 
             # Find and save best individual
-            best_solution, best_fitness = genetic_algorithm(args, n_generations, n_pop, crossover_r, mutation_r, results_path,
+            best_solution, best_fitness = genetic_algorithm(n_generations, n_pop, crossover_r, mutation_r, results_path,
                                                             k)
             print('Enemy {} - Run {} finished.'.format(enemy, i + 1))
             print('Best fitness = ', best_fitness)
