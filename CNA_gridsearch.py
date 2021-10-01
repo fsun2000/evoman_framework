@@ -75,7 +75,7 @@ def tournament_selection(pop, fitnesses, k):
 def mutation(genotype, mutation_rate):
     for i in range(len(genotype)):
         if np.random.rand() < mutation_rate:
-            genotype[i] += np.random.normal(0, 0.5)
+            genotype[i] += np.random.normal(0, 1)
     return genotype
 
 
@@ -170,7 +170,7 @@ def genetic_algorithm(n_generations, n_pop, cross_rate, mutation_rate, results_p
 
 
 # define the total iterations
-n_generations = 100
+n_generations = 10
 # define the population size
 n_pop = 100
 # crossover rate(typically in range (0.6, 0.9))
@@ -191,31 +191,34 @@ lower_bound = -1
 k = 2
 
 if __name__ == '__main__':
-    all_gains = {}
 
-    # For each enemy
-    enemies = [2]  # We do enemies 2,6,8
-    # n_experiments = 10
-    for enemy in enemies:
+    for crossover_r in [0.5, 0.7, 0.9, 1.0]:
+        for mutation_r in [0.01, 0.1, 0.2, 0.3]:
+            all_gains = {}
 
-        # Run N independent experiments
-        for i in [0, 1, 2, 3, 4]:
+            # For each enemy
+            enemies = [6]  # We do enemies 2,6,8
+            # n_experiments = 10
+            for enemy in enemies:
 
-            log_path = Path('EA2', 'enemy-{}'.format(enemy), 'run-{}'.format(i))
-            log_path.mkdir(parents=True, exist_ok=True)
-            Experiment.initialize(str(log_path), enemy)
-            results_path = os.path.join(log_path, 'improved-results-' + str(n_generations) + '.csv')
+                # Run N independent experiments
+                for i in [0]:
 
-            # Remove previous experiment results
-            if os.path.exists(results_path):
-                os.remove(results_path)
+                    log_path = Path('EA2', 'enemy-{}'.format(enemy), 'run-{}'.format(i))
+                    log_path.mkdir(parents=True, exist_ok=True)
+                    Experiment.initialize(str(log_path), enemy)
+                    results_path = os.path.join(log_path, 'test-results-' + str(n_generations) + '-' + str(crossover_r) + '-' + str(mutation_r) + '.csv')
 
-            # Find and save best individual
-            best_solution, best_fitness = genetic_algorithm(n_generations, n_pop, crossover_r, mutation_r, results_path,
-                                                            k)
-            print('Enemy {} - Run {} finished.'.format(enemy, i + 1))
-            print('Best fitness = ', best_fitness)
-            print('Best gain: ', Experiment.best_gain)
-            solution_path = os.path.join(log_path, 'improved-solution-' + str(n_generations) + '.npy')
-            # Save best individual based on gain
-            np.save(solution_path, Experiment.best_genome)
+                    # Remove previous experiment results
+                    if os.path.exists(results_path):
+                        os.remove(results_path)
+
+                    # Find and save best individual
+                    best_solution, best_fitness = genetic_algorithm(n_generations, n_pop, crossover_r, mutation_r, results_path,
+                                                                    k)
+                    print('Enemy {} - Run {} finished.'.format(enemy, i + 1))
+                    print('Best fitness = ', best_fitness)
+                    print('Best gain: ', Experiment.best_gain)
+                    # solution_path = os.path.join(log_path, 'test-solution-' + str(n_generations) + '.npy')
+                    # Save best individual based on gain
+                    # np.save(solution_path, Experiment.best_genome)
