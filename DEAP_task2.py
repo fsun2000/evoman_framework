@@ -20,9 +20,9 @@ from deap import tools
 
 
 # choose this for not using visuals and thus making experiments faster
-# headless = True
-# if headless:
-#     os.environ["SDL_VIDEODRIVER"] = "dummy"
+headless = True
+if headless:
+    os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 PARAM_CONTROL = False
 N_HIDDEN_NODES = 10
@@ -109,16 +109,22 @@ NGENS = 15
 # Initial population
 pop = toolbox.population(n=MU)
 
-# Perform (mu, lambda) algorithm using crossover_prob=0.6 and mutate_prob = 0.3
+# Perform (mu, lambda) algorithm using crossover_prob=0.6 and mutate_prob = 0.3 (old parameters are 1.0 & 0.2)
 pop, logbook = algorithms.eaMuCommaLambda(pop, toolbox, mu=MU, lambda_=LAMBDA, 
-            cxpb=0.6, mutpb=0.3, ngen=NGENS, stats=stats, halloffame=hof, verbose=False)
+            cxpb=1.0, mutpb=0.2, ngen=NGENS, stats=stats, halloffame=hof, verbose=False)
+
+# Save best solution
+with open("Task2_multi/" + "solution" + ".pickle", 'wb') as pickle_file:
+    pickle.dump(hof, pickle_file)
 
 # Export training results
 df_log = pd.DataFrame(logbook)
-with open("Task2_multi/logbook.csv", 'w') as csv_file:
+
+logbook_name = 'test_logbook'
+with open("Task2_multi/" + logbook_name + ".csv", 'w') as csv_file:
     df_log.to_csv(csv_file, index=False) 
 
-with open("Task2_multi/logbook.pickle", 'wb') as pickle_file:
+with open("Task2_multi/" + logbook_name + ".pickle", 'wb') as pickle_file:
     pickle.dump(logbook, pickle_file)
 
 # Plot results, don't save plot.
