@@ -64,7 +64,7 @@ def parse_args(args):
     parser.add_argument('--checkpoint', type=Path, help='Path to checkpoint to load')
     parser.add_argument('--ch-interval', type=int, help='Checkpoint interval per generation', default=1)
     parser.add_argument('--max-gen', type=int, help='Maximum number of generations', default=100)
-    parser.add_argument('--enemies', type=int, nargs='+', help='Enemies to use', default=[2, 6, 8])
+    parser.add_argument('--enemies', type=int, nargs='+', help='Enemies to use', default=[2, 7, 8])
     return parser.parse_args(args)
 
 
@@ -76,7 +76,7 @@ def main(args):
     all_gains = []
 
     # Run 10 independent experiments
-    for i in range(3):
+    for i in range(10):
         log_path = Path(parsed_args.name, 'run-{}'.format(i))
         log_path.mkdir(parents=True, exist_ok=True)
         Experiment.initialize(str(log_path), parsed_args.enemies)
