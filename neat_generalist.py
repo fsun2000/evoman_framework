@@ -30,31 +30,52 @@ class NeatController(Controller):
         output = self.sigmoid_activation(output)
         return np.round(output)
 
+# Overwrite cons_multi to just return raw values
+def cons_multi(values):
+    return values
+
+
+# Use original function for fitness
+def fitness(values):
+    return values.mean() - values.std()
+
+
+# Use gain according to doc
+def gain(p, e):
+    return p.sum() - e.sum()
+
 
 # This is a singleton so that I don't have to use global variables
 class Experiment:
     def initialize(name, enemies):
-        Experiment.env = Environment(experiment_name=name,
-                                     player_controller=NeatController(),
-                                     enemies=enemies,
-                                     multiplemode="yes",
-                                     randomini='yes',
-                                     savelogs='no',     # Save logs with NEAT instead
-                                     playermode="ai",
-                                     speed="fastest",
-                                     enemymode="static")
+        Experiment.init_env(name, enemies)
         Experiment.best_genome = None
-        Experiment.best_gain = -101
+        Experiment.best_gain = -301
+
+    def init_env(name, enemies):
+        Experiment.env = Environment(
+            experiment_name=name,
+            player_controller=NeatController(),
+            enemies=enemies,
+            multiplemode="yes",
+            randomini='yes',
+            savelogs='no',     # Save logs with NEAT instead
+            playermode="ai",
+            speed="fastest",
+            enemymode="static")
+        Experiment.env.cons_multi = cons_multi
 
 
 def evaluate(genomes, config):
     for _, genome in genomes:
         net = neat.nn.FeedForwardNetwork.create(genome, config)
-        f, p, e, t = Experiment.env.play(pcont=net)
-        if p - e > Experiment.best_gain:
+        f, p, e, _ = Experiment.env.play(pcont=net)
+
+        g = gain(p,e)
+        if g > Experiment.best_gain:
             Experiment.best_genome = copy.deepcopy(genome)
-            Experiment.best_gain = p - e
-        genome.fitness = f
+            Experiment.best_gain = g
+        genome.fitness = fitness(f)
 
 
 def parse_args(args):
@@ -63,7 +84,7 @@ def parse_args(args):
     parser.add_argument('--config', type=Path, help='Path to config file', default=Path('config_neat'))
     parser.add_argument('--checkpoint', type=Path, help='Path to checkpoint to load')
     parser.add_argument('--ch-interval', type=int, help='Checkpoint interval per generation', default=1)
-    parser.add_argument('--max-gen', type=int, help='Maximum number of generations', default=100)
+    parser.add_argument('--max-gen', type=int, help='Maximum number of generations', default=30)
     parser.add_argument('--enemies', type=int, nargs='+', help='Enemies to use', default=[2, 7, 8])
     return parser.parse_args(args)
 
@@ -97,12 +118,12 @@ def main(args):
         # draw_net(config, winner, directory=log_path, filename='winner')
 
         # Get gains for "best" solution
+        Experiment.init_env('all', [1,2,3,4,5,6,7,8])
+        net = neat.nn.FeedForwardNetwork.create(Experiment.best_genome, config)
         gains = []
         for i in range(5):
-            net = neat.nn.FeedForwardNetwork.create(Experiment.best_genome, config)
-            f, p, e, t = Experiment.env.play(pcont=net)
-            gains.append(p - e)
-
+            _, p, e, _ = Experiment.env.play(pcont=net)
+            gains.append(gain(p, e))
         all_gains.append(np.mean(gains))
 
     Path(parsed_args.name, 'gains').write_text(json.dumps(all_gains))
