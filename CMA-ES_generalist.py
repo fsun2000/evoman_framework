@@ -106,11 +106,12 @@ def main(name, enemies, n_gens, lambda_ratio, mu, seed):
 from pathlib import Path
 if __name__ == "__main__":
     en = [2, 7, 8]
-    for lambda_ratio in [0.3, 0.35, 0.4, 0.45, 0.5]:
+    # Parameters for Ard to search
+    for lambda_ratio in [0.3, 0.35]: #, 0.4, 0.45, 0.5
         for i in range(5):
             np.random.seed(i)
             
-            log_path = Path('deap_grid_search', 'CMA-ES_{}'.format(lambda_ratio), 'run-{}'.format(i))
+            log_path = Path('CMA-ES_grid_search', 'CMA-ES_{}'.format(lambda_ratio), 'run-{}'.format(i))
             log_path.mkdir(parents=True, exist_ok=True)
 
             pop, logbook, hof = main(name=str(log_path), enemies=en, n_gens=15, lambda_ratio=lambda_ratio, mu=50, seed=i)
@@ -121,7 +122,7 @@ if __name__ == "__main__":
 
             # Export training results
             df_log = pd.DataFrame(logbook)
-            results_path = os.path.join(log_path, 'stats.csv')
+            results_path = os.path.join(log_path, 'final-stats.csv')
             # Remove previous experiment results
             if os.path.exists(results_path):
                 os.remove(results_path)
