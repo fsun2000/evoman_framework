@@ -2,3 +2,4 @@
 /specialist_neat/enemy-*/run-*/checkpoint*
 **/__pycache__/**
 venv/
+*.pyc
