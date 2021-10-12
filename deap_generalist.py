@@ -140,8 +140,8 @@ def main(experiment_name, enemies):
 
     # Initialize (mu, lambda) model hyperparams
     # For parameter search use: ngens=15, mu=30
-    NGENS = 1
-    MU = 2
+    NGENS = 15
+    MU = 30
     LAMBDA = 3 * MU
 
     # Grid-search these?
@@ -168,13 +168,15 @@ if __name__ == '__main__':
     tic = timer()
     pop, logbook, hof = main(experiment_name='Temp', enemies=[2,7,8]) 
     print("Final runtime: ", timer() - tic)
-    print(dir(hof[0]))
-    print("Best individual fitness: ", hof[0].fitness.values[0])
+
+    best = hof.items[0]
+    print("-- Best Individual = ", np.array(best.strategy))
+    print("-- Best Fitness = ", best.fitness.values[0])
 
     logbook_name = 'temp'
     # Save best solution
     with open("deap_grid_search/solutions/" + "solution_" + logbook_name +  ".pickle", 'wb') as pickle_file:
-        pickle.dump(hof, pickle_file)
+        pickle.dump(np.array(best.strategy), pickle_file)
 
     # Export training results
     df_log = pd.DataFrame(logbook)
