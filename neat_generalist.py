@@ -50,7 +50,7 @@ class Experiment:
     def initialize(name, enemies):
         Experiment.init_env(name, enemies)
         Experiment.best_genome = None
-        Experiment.best_gain = -301
+        Experiment.best_gain = -1000
 
     def init_env(name, enemies):
         Experiment.env = Environment(
