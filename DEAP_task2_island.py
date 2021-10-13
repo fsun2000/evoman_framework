@@ -104,13 +104,13 @@ stats.register("max", np.max)
 hof = tools.HallOfFame(1)
 
 # Initialize (mu, lambda) model hyperparams
-MU = 30
+MU = 10
 LAMBDA = 3 * MU
 NGENS = 15
 FREQ = 5
 
 #number of imigrants between islands,set to a random value 5
-NIMIGRANT = 5
+NIMIGRANT = 2
 NISLES = 3
 
 # Initial population
@@ -118,24 +118,37 @@ NISLES = 3
 # MU individuals in each island
 islands = [toolbox.population(n=MU) for i in range(NISLES)]
 
+# Unregister unpicklable methods before sending the toolbox.
+toolbox.unregister("individual")
+toolbox.unregister("population")
 # # Perform (mu, lambda) algorithm using crossover_prob=0.6 and mutate_prob = 0.3 (old parameters are 1.0 & 0.2)
 # pop, logbook = algorithms.eaMuCommaLambda(pop, toolbox, mu=MU, lambda_=LAMBDA, 
 #             cxpb=1.0, mutpb=0.2, ngen=NGENS, stats=stats, halloffame=hof, verbose=False)
 
 toolbox.register("algorithm", algorithms.eaMuCommaLambda, toolbox=toolbox, mu=MU, lambda_=LAMBDA, 
-            cxpb=1.0, mutpb=0.2, ngen=FREQ, stats=stats, halloffame=hof, verbose=False)
+            cxpb=0.6, mutpb=0.2, ngen=FREQ, stats=stats, halloffame=hof, verbose=False)
 
+logbook = []
 for i in range(0, NGENS, FREQ):
     results = toolbox.map(toolbox.algorithm, islands)
-    islands = [pop for pop, logbook in results]
-    logbook = [lb for pop, lb in results]
+    islands = []
+    logbook_per_gen = []
+    for pop, logbook_per_island in results:
+        islands.append(pop)
+        logbook_per_gen.append(logbook_per_island[0])
+        
+    # island = [pop for pop, logbook in results]
+
+    logbook_per_gen = pd.DataFrame(data=logbook_per_gen).mean().to_dict()
+    logbook_per_gen['gen'] = i
+    logbook.append(logbook_per_gen)
     tools.migRing(islands, NIMIGRANT, tools.selBest)
 
 
 
 # Save best solution
 LOG_PATH = "Task2_multi/"
-with open(LOG_PATH + "solution" + ".pickle", 'wb') as pickle_file:
+with open(LOG_PATH + "solution_island" + ".pickle", 'wb') as pickle_file:
     pickle.dump(hof, pickle_file)
 
 # Export training results
@@ -149,14 +162,19 @@ with open(LOG_PATH + logbook_name + ".pickle", 'wb') as pickle_file:
     pickle.dump(logbook, pickle_file)
 
 # Plot results, don't save plot.
-gen = logbook.select("gen")
-# fit_mins = logbook.chapters["fitness"].select("max")
-# fit_avgs = logbook.chapters["fitness"].select("avg")
-fit_mins = logbook.select("max")
-fit_avgs = logbook.select("avg")
+# gen = logbook.select("gen")
+# # fit_mins = logbook.chapters["fitness"].select("max")
+# # fit_avgs = logbook.chapters["fitness"].select("avg")
+# fit_mins = logbook.select("max")
+# fit_avgs = logbook.select("avg")
+gen = df_log["gen"]
+fit_mins = df_log["max"]
+fit_avgs = df_log["avg"]
+
 fig, ax1 = plt.subplots()
 line1 = ax1.plot(gen, fit_mins, "b-", label="Maximum Fitness")
-line1 = ax1.plot(gen, fit_avgs, "b-", label="Average Fitness")
+line1 = ax1.plot(gen, fit_avgs, "b-",color='green', label="Average Fitness")
 ax1.set_xlabel("Generation")
 ax1.set_ylabel("Fitness", color="b")
 plt.show()
+plt.savefig(LOG_PATH+"results.jpg")
