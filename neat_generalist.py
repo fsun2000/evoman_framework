@@ -3,6 +3,7 @@ import copy
 import json
 from pathlib import Path
 import os
+import pickle
 import sys
 
 import numpy as np
@@ -15,7 +16,6 @@ from environment import Environment
 
 # neat
 import neat
-# from visualize import draw_net
 
 
 class NeatController(Controller):
@@ -29,6 +29,7 @@ class NeatController(Controller):
         output = np.array(net.activate(inputs))
         output = self.sigmoid_activation(output)
         return np.round(output)
+
 
 # Overwrite cons_multi to just return raw values
 def cons_multi(values):
@@ -94,11 +95,11 @@ def main(args):
     # Load NEAT configuration.
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation, parsed_args.config)
-    all_gains = []
+    all_gains = {}
 
     # Run 10 independent experiments
-    for i in range(10):
-        log_path = Path(parsed_args.name, 'run-{}'.format(i))
+    for run in range(10):
+        log_path = Path(parsed_args.name, 'run-{}'.format(run))
         log_path.mkdir(parents=True, exist_ok=True)
         Experiment.initialize(str(log_path), parsed_args.enemies)
 
@@ -111,22 +112,31 @@ def main(args):
                             filename_prefix=log_path.joinpath('checkpoint-')))
 
         # Run experiment
-        winner = pop.run(evaluate, parsed_args.max_gen)
+        pop.run(evaluate, parsed_args.max_gen)
         # Save mean and max fitness by generation
         stats.save_genome_fitness(filename=str(log_path.joinpath('stats.csv')))
-        # Save a visualization of winner network
-        # draw_net(config, winner, directory=log_path, filename='winner')
+
+        # Save "best" solution
+        with Path(log_path, 'best-genome').open('wb') as outfile:
+            pickle.dump(Experiment.best_genome, outfile, protocol=pickle.HIGHEST_PROTOCOL)
 
         # Get gains for "best" solution
         Experiment.init_env('all', [1,2,3,4,5,6,7,8])
         net = neat.nn.FeedForwardNetwork.create(Experiment.best_genome, config)
-        gains = []
-        for i in range(5):
-            _, p, e, _ = Experiment.env.play(pcont=net)
-            gains.append(gain(p, e))
-        all_gains.append(np.mean(gains))
+        all_gains['run-{}'.format(run)] = {}
+        for _ in range(5):
+            _, player, enemy, _ = Experiment.env.play(pcont=net)
+            for i, (p, e) in enumerate(zip(player, enemy)):
+                if 'enemy-{}'.format(i+1) not in all_gains['run-{}'.format(run)]:
+                    all_gains['run-{}'.format(run)]['enemy-{}'.format(i+1)] = {}
+                    all_gains['run-{}'.format(run)]['enemy-{}'.format(i+1)]['player_energy'] = []
+                    all_gains['run-{}'.format(run)]['enemy-{}'.format(i+1)]['enemy_energy'] = []
+                all_gains['run-{}'.format(run)]['enemy-{}'.format(i+1)]['player_energy'].append(int(p))
+                all_gains['run-{}'.format(run)]['enemy-{}'.format(i+1)]['enemy_energy'].append(int(e))
 
-    Path(parsed_args.name, 'gains').write_text(json.dumps(all_gains))
+    # Save gains
+    with Path(parsed_args.name, 'gains.json').open('w') as outfile:
+        json.dump(all_gains, outfile, indent=4)
 
 
 if __name__ == '__main__':
