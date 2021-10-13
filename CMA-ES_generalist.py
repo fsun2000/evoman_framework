@@ -7,6 +7,7 @@ from demo_controller import player_controller
 # imports other libs
 import numpy as np
 import os
+from pathlib import Path
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
@@ -78,13 +79,7 @@ def main(name, enemies, n_gens, lambda_ratio, mu, seed):
     np.random.seed(seed)
     Experiment.initialize(name, enemies)
 
-    # The cma module uses the numpy random number generator
-    # np.random.seed(128)
-
-    # The CMA-ES algorithm takes a population of one individual as argument
-    # The centroid is set to a vector of 5.0 see http://www.lri.fr/~hansen/cmaes_inmatlab.html
-    # for more details about the rastrigin and other tests for CMA-ES    
-    strategy = cma.Strategy(centroid=list(np.zeros(N)), sigma=np.sqrt(2**2/12), 
+    strategy = cma.Strategy(centroid=np.random.uniform(-1, 1, N), sigma=np.sqrt(2**2/12), 
                             lambda_=int(np.ceil(mu/lambda_ratio)), mu=mu)
     toolbox.register("generate", strategy.generate, creator.Individual)
     toolbox.register("update", strategy.update)
@@ -94,42 +89,46 @@ def main(name, enemies, n_gens, lambda_ratio, mu, seed):
     stats.register("avg", np.mean)
     stats.register("max", np.max)
     stats.register("std", np.std)
-    
-    #logger = tools.EvolutionLogger(stats.functions.keys())
-   
+
     # The CMA-ES algorithm converge with good probability with those settings
     pop, logbook = algorithms.eaGenerateUpdate(toolbox, ngen=n_gens, stats=stats, halloffame=hof)
     
     print("Best individual fitness is {}".format(hof[0].fitness.values))
     return pop, logbook, hof
 
-from pathlib import Path
+
 if __name__ == "__main__":
-    en = [2, 7, 8]
-    # Parameters for Ard to search
-    for lambda_ratio in [0.3, 0.35]: #, 0.4, 0.45, 0.5
-        for i in range(5):
-            np.random.seed(i)
+    LAMBDA_RATIO = 0.3 # See parameter search results in best_CMA_params.py
+    N_GENS = 30
+    MU = 50
+    en = [2,7]
+
+    for i in range(10):
+        np.random.seed(i)
+        
+        log_path = Path('CMA-ES' + ''.join([str(e) for e in en]), 'run-{}'.format(i))
+        log_path.mkdir(parents=True, exist_ok=True)
+
+        pop, logbook, hof = main(name=str(log_path), enemies=en, n_gens=N_GENS, lambda_ratio=LAMBDA_RATIO, mu=MU, seed=i)
+
+        best = hof.items[0]
+        print("-- Best Individual = ", np.array(best))
+        print("-- Best Fitness = ", best.fitness.values[0])
+
+        # Export training results
+        df_log = pd.DataFrame(logbook)
+        results_path = os.path.join(log_path, 'final-stats.csv')
+        # Remove previous experiment results
+        if os.path.exists(results_path):
+            os.remove(results_path)
+        with open(results_path, 'w') as csv_file:
+            df_log.to_csv(csv_file, index=False, line_terminator='\n') 
+
+        # Save best solution based on our gain
+        gain_solution_path = os.path.join(log_path, 'gain-solution.npy')
+        np.save(gain_solution_path, Experiment.best_genome)
+
+        # Save best solution based on our fitness
+        fitness_solution_path = os.path.join(log_path, 'fitness-solution.npy')
+        np.save(fitness_solution_path, np.array(best))
             
-            log_path = Path('CMA-ES_grid_search', 'CMA-ES_{}'.format(lambda_ratio), 'run-{}'.format(i))
-            log_path.mkdir(parents=True, exist_ok=True)
-
-            pop, logbook, hof = main(name=str(log_path), enemies=en, n_gens=15, lambda_ratio=lambda_ratio, mu=50, seed=i)
-
-            best = hof.items[0]
-            print("-- Best Individual = ", np.array(best))
-            print("-- Best Fitness = ", best.fitness.values[0])
-
-            # Export training results
-            df_log = pd.DataFrame(logbook)
-            results_path = os.path.join(log_path, 'final-stats.csv')
-            # Remove previous experiment results
-            if os.path.exists(results_path):
-                os.remove(results_path)
-            with open(results_path, 'w') as csv_file:
-                df_log.to_csv(csv_file, index=False, line_terminator='\n') 
-
-            # # Save best solution
-            # with open("deap_grid_search/solutions/" + "solution_" + logbook_name +  ".pickle", 'wb') as pickle_file:
-            #     pickle.dump(np.array(best), pickle_file)
-
