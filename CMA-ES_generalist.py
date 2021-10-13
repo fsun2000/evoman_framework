@@ -39,7 +39,7 @@ class Experiment:
     def initialize(name, enemies):
         Experiment.init_env(name, enemies)
         Experiment.best_genome = None
-        Experiment.best_gain = -301
+        Experiment.best_gain = -1000
 
     def init_env(name, enemies):
         Experiment.env = Environment(
@@ -67,7 +67,7 @@ def fitness(ind):
     return [f]
 
 # Problem size
-N=265
+N=265 # Same as (env.get_num_sensors() + 1) * n_hidden + (n_hidden + 1) * 5 
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     LAMBDA_RATIO = 0.3 # See parameter search results in best_CMA_params.py
     N_GENS = 30
     MU = 50
-    en = [2,7]
+    en = [7,8]
 
     for i in range(10):
         np.random.seed(i)
@@ -129,6 +129,6 @@ if __name__ == "__main__":
         np.save(gain_solution_path, Experiment.best_genome)
 
         # Save best solution based on our fitness
-        fitness_solution_path = os.path.join(log_path, 'fitness-solution.npy')
+        fitness_solution_path = os.path.join(log_path, 'rerun-fitness-solution.npy')
         np.save(fitness_solution_path, np.array(best))
             
