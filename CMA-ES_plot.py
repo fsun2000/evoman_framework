@@ -64,9 +64,9 @@ def plot_training_curve():
         ax.set_title("Performance on group {}".format(group), fontsize=22)
         ax.legend()
         plt.tight_layout()
-        # plt.show()
-    plt.savefig('CMA-ES27/training_fitness27.png', bbox_inches='tight')
-    plt.savefig('CMA-ES78/training_fitness78.png', bbox_inches='tight')  
+        group_string = ''.join([str(e) for e in group])
+        plt.savefig('CMA-ES{}/training_fitness{}.png'.format(group_string, group_string), bbox_inches='tight')
+        plt.show()
 
 # choose this for not using visuals and thus making experiments faster
 headless = True
